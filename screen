@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PE 딜 스크리닝</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#f8f7f4;--surface:#ffffff;--surface2:#f2f0ec;--border:#e4e0d8;--border2:#d0ccc2;--text:#1a1916;--text2:#6b6760;--text3:#a09c96;--green:#0f6e56;--green-bg:#e1f5ee;--red:#993c1d;--red-bg:#faece7;--amber:#854f0b;--amber-bg:#faeeda;--info:#185fa5;--info-bg:#e6f1fb;--r:8px;--rl:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{padding:2rem;overflow-x:hidden}
+.sidebar-logo{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+.sidebar-logo h1{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.sidebar-logo p{font-size:11px;color:var(--text3);margin-top:2px}
+.nav-section{padding:1rem 1.25rem .5rem}
+.nav-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s;margin-bottom:1px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--text);color:#fff}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.nav-badge{margin-left:auto;font-size:10px;background:var(--border);color:var(--text2);padding:1px 6px;border-radius:10px;font-family:'IBM Plex Mono',monospace}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.2);color:#fff}
+.sidebar-footer{margin-top:auto;padding:1rem 1.25rem;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+.panel{display:none}.panel.active{display:block}
+.page-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+.page-title{font-size:20px;font-weight:600}
+.page-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem}
+.filter-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;color:var(--text2);font-weight:500}
+input,select,textarea{font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:none;cursor:pointer;font-size:13px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:500;transition:all .12s;white-space:nowrap}
+.btn-primary{background:var(--text);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--text2)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-info{background:none;border:1px solid #b5d4f4;color:var(--info)}.btn-info:hover{background:var(--info-bg)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem}
+.chip{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:'IBM Plex Mono',monospace}
+.chip b{color:var(--text);font-weight:600}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rl);background:var(--surface);max-height:500px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:2}
+th{padding:9px 12px;font-size:11px;font-weight:600;color:var(--text2);text-align:left;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;letter-spacing:.03em}
+th:hover{color:var(--text)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.pr:hover{background:#fafaf8}
+tr.fr{opacity:.4}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;font-family:'IBM Plex Mono',monospace}
+.b-pass{background:var(--green-bg);color:var(--green)}
+.b-fail{background:var(--red-bg);color:var(--red)}
+.promoted{font-size:11px;color:var(--green);font-weight:600}
+.sa{font-size:10px;margin-left:2px}
+.cg{color:var(--green);font-weight:500}.cr{color:var(--red)}.ca{color:var(--amber)}.cn{color:var(--text)}
+.pagination{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--text2)}
+.pagination .sp{flex:1}
+.deal-panel{display:flex;gap:1.5rem}
+.deal-col{width:210px;flex-shrink:0}
+.detail-col{flex:1;min-width:0}
+.di{padding:10px 12px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:all .1s}
+.di:hover{background:var(--surface2)}
+.di.active{border-color:var(--border2);background:var(--surface2)}
+.di-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.di-sec{font-size:11px;color:var(--text3);margin-top:1px}
+.di-score{font-size:11px;margin-top:3px;font-family:'IBM Plex Mono',monospace}
+.empty-deal{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:13px}
+.sl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin:1.25rem 0 8px}
+.sl:first-child{margin-top:0}
+.fg4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:6px}
+.fg2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.fg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.fc{background:var(--surface2);border-radius:var(--r);padding:10px 12px}
+.fc label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
+.fc input{width:100%;border:none;background:transparent;font-size:14px;color:var(--text);font-family:'IBM Plex Mono',monospace;padding:0}
+.fc input:focus{outline:none}
+.fc.calc{background:var(--surface);border:1px solid var(--border)}
+.fc.calc .val{font-size:16px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.sh-row{display:flex;gap:8px;margin-bottom:5px}
+.sh-row input{flex:1}
+.sh-row input:last-child{max-width:80px}
+.add-link{font-size:12px;color:var(--info);background:none;border:none;cursor:pointer;padding:2px 0}
+.ci{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:4px;cursor:pointer;background:var(--surface);transition:all .1s}
+.ci.cip{background:var(--green-bg);border-color:#9fe1cb}
+.ci.cif{background:var(--red-bg);border-color:#f5c4b3}
+.ci.cir{background:var(--amber-bg);border-color:#fac775}
+.ci-txt{flex:1}
+.ci-main{font-size:12px;font-weight:500}
+.ci-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.ci-b{font-size:10px;padding:2px 8px;border-radius:10px;flex-shrink:0;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.cip .ci-b{background:var(--green-bg);color:var(--green);border:1px solid #9fe1cb}
+.cif .ci-b{background:var(--red-bg);color:var(--red);border:1px solid #f5c4b3}
+.cir .ci-b{background:var(--amber-bg);color:var(--amber);border:1px solid #fac775}
+.cin .ci-b{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.score-block{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);margin:1.25rem 0}
+.score-num{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;min-width:52px}
+.pt{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.pf{height:100%;border-radius:3px;transition:width .3s}
+.verdict{font-size:13px;font-weight:600}
+textarea.memo{width:100%;min-height:100px;resize:vertical;border-radius:var(--r);padding:10px 12px;font-size:13px;line-height:1.6}
+.ov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+.ov-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem}
+.ov-label{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.ov-val{font-size:32px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.ov-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--rl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface)}
+.upload-zone:hover{border-color:var(--text2);background:var(--surface2)}
+.col-hint{display:inline-block;margin-top:1rem;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;color:var(--text2);text-align:left;line-height:2}
+.col-hint b{color:var(--text)}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;padding:10px 18px;border-radius:var(--r);font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Deal Screener</h1>
+    <p>PE 딜 스크리닝 툴</p>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">스크리닝</div>
+    <div class="nav-item active" onclick="showPanel('screen')" id="nav-screen"><span class="nav-icon">⊞</span>매스 스크리닝<span class="nav-badge" id="badge-screen">0</span></div>
+    <div class="nav-item" onclick="showPanel('deals')" id="nav-deals"><span class="nav-icon">◎</span>개별 딜 검토<span class="nav-badge" id="badge-deals">0</span></div>
+    <div class="nav-item" onclick="showPanel('overview')" id="nav-overview"><span class="nav-icon">▦</span>전체 현황</div>
+  </div>
+  <div class="nav-section" style="margin-top:.5rem">
+    <div class="nav-label">데이터</div>
+    <div class="nav-item" onclick="showPanel('upload')" id="nav-upload"><span class="nav-icon">↑</span>파일 업로드</div>
+    <div class="nav-item" onclick="exportCSV()"><span class="nav-icon">↓</span>결과 내보내기</div>
+  </div>
+  <div class="sidebar-footer">데이터는 브라우저에 자동 저장됩니다</div>
+</aside>
+
+<main class="main">
+
+<!-- 매스 스크리닝 -->
+<div class="panel active" id="panel-screen">
+  <div class="page-header">
+    <div><div class="page-title">매스 스크리닝</div><div class="page-sub">업종·재무 기준으로 투자 후보군을 필터링합니다</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="resetFilter()">초기화</button>
+      <button class="btn btn-primary btn-sm" onclick="promoteAll()">Pass 전체 → 딜 검토</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="filter-row">
+      <div class="fg" style="min-width:140px"><label>업종</label>
+        <select id="f-sector" onchange="applyFilter()"><option value="">전체 업종</option><option>반도체</option><option>로봇</option><option>이차전지</option></select>
+      </div>
+      <div class="fg"><label>매출 최소 (억)</label><input id="f-rev-min" type="number" placeholder="0" style="width:110px" oninput="applyFilter()"/></div>
+      <div class="fg"><label>매출 최대 (억)</label><input id="f-rev-max" type="number" placeholder="무제한" style="width:110px" oninput="applyFilter()"/></div>
+      <div class="fg"><label>EBITDA 마진 최소 (%)</label><input id="f-em-min" type="number" placeholder="0" style="width:110px" oninput="applyFilter()"/></div>
+      <div class="fg"><label>부채비율 최대 (%)</label><input id="f-dr-max" type="number" placeholder="무제한" style="width:110px" oninput="applyFilter()"/></div>
+    </div>
+    <div class="chips" id="summary-chips"></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th onclick="sortBy('idx')"># <span class="sa" id="s-idx"></span></th>
+        <th onclick="sortBy('name')">회사명 <span class="sa" id="s-name"></span></th>
+        <th onclick="sortBy('sector')">업종 <span class="sa" id="s-sector"></span></th>
+        <th onclick="sortBy('rev')">매출(억) <span class="sa" id="s-rev">↓</span></th>
+        <th onclick="sortBy('ebitda')">EBITDA(억) <span class="sa" id="s-ebitda"></span></th>
+        <th onclick="sortBy('em')">EBITDA 마진 <span class="sa" id="s-em"></span></th>
+        <th onclick="sortBy('opm')">OPM <span class="sa" id="s-opm"></span></th>
+        <th onclick="sortBy('debtRatio')">부채비율 <span class="sa" id="s-debtRatio"></span></th>
+        <th onclick="sortBy('yoy')">YoY <span class="sa" id="s-yoy"></span></th>
+        <th>스크리닝</th><th>딜 검토</th>
+      </tr></thead>
+      <tbody id="screen-tbody"></tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <button class="btn btn-ghost btn-sm" id="prev-btn" onclick="changePage(-1)">‹ 이전</button>
+    <span id="page-info" style="font-family:'IBM Plex Mono',monospace;font-size:12px"></span>
+    <button class="btn btn-ghost btn-sm" id="next-btn" onclick="changePage(1)">다음 ›</button>
+    <span class="sp"></span>
+    <span id="page-count" style="font-size:12px;color:var(--text3)"></span>
+  </div>
+</div>
+
+<!-- 개별 딜 검토 -->
+<div class="panel" id="panel-deals">
+  <div class="page-header">
+    <div><div class="page-title">개별 딜 검토</div><div class="page-sub">1단계에서 올라온 기업을 심층 검토합니다</div></div>
+  </div>
+  <div id="deals-empty" class="empty-deal"><div style="font-size:32px;margin-bottom:12px">◎</div><div>매스 스크리닝에서 기업을 선택해 올려주세요.</div></div>
+  <div id="deals-layout" class="deal-panel" style="display:none">
+    <div class="deal-col" id="deal-sidebar-list"></div>
+    <div class="detail-col" id="deal-detail-area"></div>
+  </div>
+</div>
+
+<!-- 전체 현황 -->
+<div class="panel" id="panel-overview">
+  <div class="page-header"><div><div class="page-title">전체 현황</div><div class="page-sub">검토 중인 딜 포트폴리오 요약</div></div></div>
+  <div id="overview-content"></div>
+</div>
+
+<!-- 파일 업로드 -->
+<div class="panel" id="panel-upload">
+  <div class="page-header"><div><div class="page-title">파일 업로드</div><div class="page-sub">새 기업 리스트를 추가합니다 (기존 데이터에 병합)</div></div></div>
+  <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+    <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(event)"/>
+    <div style="font-size:32px;margin-bottom:10px">⬆</div>
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:6px">CSV 또는 Excel 파일 업로드</h3>
+    <p style="font-size:13px;color:var(--text2)">클릭하거나 드래그해서 파일을 선택하세요</p>
+    <div class="col-hint">필요 컬럼: <b>회사명</b> · <b>업종</b> · <b>매출</b> · <b>EBITDA</b> · <b>영업이익</b> · <b>부채비율</b><br>단위: 억원 / 부채비율: % 숫자만 (예: 145)</div>
+  </div>
+  <div id="upload-result" style="margin-top:1rem"></div>
+</div>
+
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const CL=[
+  {cat:"사업 및 시장",items:[
+    {id:"c1",main:"핵심 사업 모델 명확성",sub:"주력 제품/서비스·수익 구조·고객군 파악 가능"},
+    {id:"c2",main:"시장 지위 및 경쟁 우위",sub:"1~3위권 시장 지위 또는 니치 지배력"},
+    {id:"c3",main:"매출 가시성/반복성",sub:"장기계약·구독·정부발주 등 예측 가능 매출 비중"},
+  ]},
+  {cat:"재무",items:[
+    {id:"c4",main:"EBITDA 마진 양호",sub:"10% 이상 또는 개선 트렌드 확인"},
+    {id:"c5",main:"OPM 흑자",sub:"영업이익률 흑자 전환 또는 5% 이상"},
+    {id:"c6",main:"레버리지 수준 관리 가능",sub:"부채비율 200% 미만 또는 ND/EBITDA 4x 이하"},
+    {id:"c7",main:"매출 성장 트렌드",sub:"최근 2~3년 YoY 성장 또는 성장 모멘텀"},
+  ]},
+  {cat:"지배구조 및 딜 구조",items:[
+    {id:"c8",main:"주주 구성 파악 가능",sub:"대주주 지분·우호/비우호 주주 현황"},
+    {id:"c9",main:"경영권 확보 가능성",sub:"MBO·구주매출·제3자배정 유상증자 등"},
+    {id:"c10",main:"Exit 경로 가시성",sub:"IPO·전략적투자자 매각·세컨더리 등"},
+  ]},
+  {cat:"리스크",items:[
+    {id:"c11",main:"오너 리스크 낮음",sub:"소송·횡령·특수관계자 이슈 없음"},
+    {id:"c12",main:"규제/법적 리스크 제한적",sub:"주요 라이선스 보유·인허가 리스크 확인"},
+    {id:"c13",main:"회계 투명성",sub:"외부감사 이력·적정의견 여부"},
+  ]},
+];
+
+const SEED=[{"name":"한국씰마스타(주)","sector":"반도체","rev":945.6,"revPrev":797.7,"ebitda":271.9,"op":251.3,"asset":1247.9,"debt":141.2,"debtRatio":12.8},{"name":"한국램리서치(유)","sector":"반도체","rev":1575.7,"revPrev":1991.2,"ebitda":94.7,"op":75.0,"asset":2408.7,"debt":473.8,"debtRatio":24.5},{"name":"어플라이드머티어리얼즈코리아(주)","sector":"반도체","rev":13292.6,"revPrev":12426.9,"ebitda":2167.1,"op":2098.6,"asset":7910.7,"debt":3110.2,"debtRatio":64.8},{"name":"(주)이오테크닉스","sector":"반도체","rev":2922.0,"revPrev":2816.0,"ebitda":393.5,"op":358.0,"asset":6235.5,"debt":559.2,"debtRatio":9.9},{"name":"코리아테크노(주)","sector":"반도체","rev":786.9,"revPrev":578.1,"ebitda":160.1,"op":156.3,"asset":1020.1,"debt":202.6,"debtRatio":24.8},{"name":"(주)보부하이테크","sector":"반도체","rev":709.9,"revPrev":475.7,"ebitda":126.1,"op":92.4,"asset":846.5,"debt":372.0,"debtRatio":78.4},{"name":"유니셈(주)","sector":"반도체","rev":2085.5,"revPrev":2216.2,"ebitda":129.9,"op":107.1,"asset":2566.7,"debt":331.9,"debtRatio":14.9},{"name":"린데에이엠티(주)","sector":"반도체","rev":1334.2,"revPrev":1062.7,"ebitda":346.5,"op":326.6,"asset":1155.8,"debt":276.0,"debtRatio":31.4},{"name":"국제엘렉트릭코리아(주)","sector":"반도체","rev":3861.8,"revPrev":4965.3,"ebitda":537.4,"op":481.1,"asset":2091.2,"debt":681.1,"debtRatio":48.3},{"name":"아드반테스트코리아(주)","sector":"반도체","rev":5332.0,"revPrev":4382.8,"ebitda":820.3,"op":772.9,"asset":3174.4,"debt":810.5,"debtRatio":34.3},{"name":"에이에스엠케이(주)","sector":"반도체","rev":4692.0,"revPrev":2972.3,"ebitda":719.4,"op":525.6,"asset":4365.6,"debt":1094.6,"debtRatio":33.5},{"name":"(주)뉴파워프라즈마","sector":"반도체","rev":1445.6,"revPrev":1173.1,"ebitda":349.7,"op":278.2,"asset":3563.4,"debt":1213.3,"debtRatio":51.6},{"name":"미래반도체(주)","sector":"반도체","rev":4876.3,"revPrev":3805.1,"ebitda":106.1,"op":102.3,"asset":1333.1,"debt":474.3,"debtRatio":55.2},{"name":"버슘머트리얼즈한양기공(주)","sector":"반도체","rev":2180.9,"revPrev":2118.5,"ebitda":338.1,"op":332.5,"asset":1587.6,"debt":576.9,"debtRatio":57.1},{"name":"(주)에스에스피","sector":"반도체","rev":408.6,"revPrev":361.6,"ebitda":138.1,"op":128.5,"asset":644.3,"debt":75.4,"debtRatio":13.3},{"name":"(주)테크윙","sector":"반도체","rev":1639.0,"revPrev":1143.9,"ebitda":335.3,"op":227.8,"asset":4979.6,"debt":3089.5,"debtRatio":163.5},{"name":"(주)월덱스","sector":"반도체","rev":2791.7,"revPrev":2609.2,"ebitda":838.7,"op":720.2,"asset":3639.4,"debt":627.7,"debtRatio":20.8},{"name":"(주)에스앤에스텍","sector":"반도체","rev":1666.1,"revPrev":1430.2,"ebitda":416.4,"op":294.6,"asset":2926.4,"debt":471.7,"debtRatio":19.2},{"name":"(주)유진테크","sector":"반도체","rev":2441.0,"revPrev":2189.8,"ebitda":623.7,"op":546.3,"asset":5463.1,"debt":749.7,"debtRatio":15.9},{"name":"(주)원익큐엔씨","sector":"반도체","rev":3455.4,"revPrev":2868.6,"ebitda":612.6,"op":402.1,"asset":6421.5,"debt":2477.4,"debtRatio":62.8},{"name":"(주)글로벌스탠다드테크놀로지","sector":"반도체","rev":3236.2,"revPrev":2606.1,"ebitda":544.2,"op":515.3,"asset":2935.8,"debt":531.7,"debtRatio":22.1},{"name":"한솔아이원스(주)","sector":"반도체","rev":1571.4,"revPrev":1239.3,"ebitda":319.7,"op":230.6,"asset":2320.3,"debt":498.7,"debtRatio":27.4},{"name":"(주)에이치피에스피","sector":"반도체","rev":1814.0,"revPrev":1790.9,"ebitda":975.5,"op":939.5,"asset":3199.0,"debt":419.9,"debtRatio":15.1},{"name":"(주)실리콘투","sector":"반도체","rev":6630.5,"revPrev":3315.4,"ebitda":1357.0,"op":1321.2,"asset":4193.1,"debt":1811.4,"debtRatio":76.1},{"name":"한미반도체(주)","sector":"반도체","rev":5555.5,"revPrev":1570.8,"ebitda":2650.8,"op":2556.1,"asset":8200.1,"debt":1677.3,"debtRatio":25.7},{"name":"(주)이녹스첨단소재","sector":"반도체","rev":3999.9,"revPrev":3594.0,"ebitda":1063.4,"op":895.5,"asset":6670.9,"debt":1954.7,"debtRatio":41.4},{"name":"(주)DB하이텍","sector":"반도체","rev":9915.9,"revPrev":10632.6,"ebitda":3294.4,"op":1777.0,"asset":21469.4,"debt":2636.4,"debtRatio":14.0},{"name":"(주)한솔케미칼","sector":"반도체","rev":5848.5,"revPrev":5659.0,"ebitda":1534.2,"op":1157.6,"asset":11527.4,"debt":3077.1,"debtRatio":36.4},{"name":"버슘머트리얼즈코리아(주)","sector":"반도체","rev":3851.8,"revPrev":3291.8,"ebitda":606.3,"op":366.2,"asset":4855.9,"debt":469.0,"debtRatio":10.7},{"name":"(주)동진쎄미켐","sector":"반도체","rev":10710.9,"revPrev":9672.8,"ebitda":2222.5,"op":1808.4,"asset":14662.7,"debt":6926.1,"debtRatio":89.5},{"name":"에스케이실트론(주)","sector":"반도체","rev":20922.5,"revPrev":19864.6,"ebitda":7004.4,"op":4232.8,"asset":56539.3,"debt":31503.7,"debtRatio":125.8},{"name":"솔브레인(주)","sector":"반도체","rev":7982.2,"revPrev":7953.3,"ebitda":2041.4,"op":1549.0,"asset":10905.6,"debt":1240.6,"debtRatio":12.8},{"name":"(주)넥스틴","sector":"반도체","rev":1159.0,"revPrev":879.3,"ebitda":547.6,"op":504.4,"asset":1926.0,"debt":312.0,"debtRatio":19.3},{"name":"피에스케이홀딩스(주)","sector":"반도체","rev":1722.2,"revPrev":745.8,"ebitda":624.6,"op":578.5,"asset":3246.0,"debt":514.4,"debtRatio":18.8},{"name":"(주)케이씨텍","sector":"반도체","rev":3854.3,"revPrev":2869.1,"ebitda":660.7,"op":497.8,"asset":5491.4,"debt":672.9,"debtRatio":14.0},{"name":"주성엔지니어링(주)","sector":"반도체","rev":4093.8,"revPrev":2846.9,"ebitda":1166.2,"op":981.2,"asset":9851.2,"debt":4194.4,"debtRatio":74.1},{"name":"(주)쎄믹스","sector":"반도체","rev":2577.0,"revPrev":1227.3,"ebitda":450.2,"op":397.7,"asset":2719.3,"debt":1320.5,"debtRatio":94.4},{"name":"(주)에스티이","sector":"반도체","rev":3165.8,"revPrev":2891.2,"ebitda":337.1,"op":299.7,"asset":3662.9,"debt":1024.5,"debtRatio":38.8},{"name":"한양이엔지(주)","sector":"반도체","rev":9854.5,"revPrev":9088.9,"ebitda":831.6,"op":723.6,"asset":7595.5,"debt":2588.1,"debtRatio":51.7},{"name":"(주)에스에이엠티","sector":"반도체","rev":17047.8,"revPrev":14574.0,"ebitda":437.2,"op":423.6,"asset":4533.3,"debt":1609.0,"debtRatio":55.0},{"name":"해성디에스(주)","sector":"반도체","rev":5945.9,"revPrev":6617.7,"ebitda":1099.1,"op":609.5,"asset":7782.1,"debt":2197.6,"debtRatio":39.4},{"name":"(주)코미코","sector":"반도체","rev":1597.3,"revPrev":1268.2,"ebitda":402.7,"op":264.6,"asset":4420.8,"debt":1607.7,"debtRatio":57.2},{"name":"피에스케이(주)","sector":"반도체","rev":3365.7,"revPrev":3111.3,"ebitda":581.6,"op":506.4,"asset":4996.4,"debt":895.1,"debtRatio":21.8},{"name":"(주)원익아이피에스","sector":"반도체","rev":7483.0,"revPrev":6903.1,"ebitda":510.6,"op":100.2,"asset":11228.1,"debt":2377.6,"debtRatio":26.9},{"name":"(주)싸이맥스","sector":"반도체","rev":1648.9,"revPrev":1277.7,"ebitda":259.0,"op":233.9,"asset":2271.4,"debt":537.3,"debtRatio":31.0},{"name":"(주)에스비테크","sector":"반도체","rev":2126.5,"revPrev":2097.8,"ebitda":409.0,"op":376.9,"asset":2515.2,"debt":386.5,"debtRatio":18.2},{"name":"(주)테스","sector":"반도체","rev":2372.9,"revPrev":1443.9,"ebitda":439.5,"op":384.4,"asset":3816.0,"debt":505.3,"debtRatio":15.3},{"name":"(주)싸이노스","sector":"반도체","rev":970.3,"revPrev":862.8,"ebitda":270.4,"op":205.6,"asset":1396.4,"debt":182.6,"debtRatio":15.0},{"name":"(주)에이앤아이","sector":"반도체","rev":2106.3,"revPrev":1279.3,"ebitda":218.9,"op":188.1,"asset":1716.9,"debt":836.6,"debtRatio":95.0},{"name":"(주)라모스테크놀로지","sector":"반도체","rev":1791.2,"revPrev":1549.0,"ebitda":266.3,"op":224.7,"asset":1080.6,"debt":443.8,"debtRatio":69.7},{"name":"(주)엘케이엔지니어링","sector":"반도체","rev":945.4,"revPrev":717.9,"ebitda":452.5,"op":419.4,"asset":1294.2,"debt":265.1,"debtRatio":25.8},{"name":"(주)에스테크","sector":"반도체","rev":1045.9,"revPrev":476.0,"ebitda":377.2,"op":364.2,"asset":1487.6,"debt":290.9,"debtRatio":24.3},{"name":"(주)윌비에스엔티","sector":"반도체","rev":1128.0,"revPrev":1119.8,"ebitda":218.2,"op":207.9,"asset":614.1,"debt":105.0,"debtRatio":20.6},{"name":"(주)씨엠테크","sector":"반도체","rev":721.8,"revPrev":505.4,"ebitda":239.5,"op":216.8,"asset":823.1,"debt":313.6,"debtRatio":61.6},{"name":"(주)현진세미텍","sector":"반도체","rev":489.7,"revPrev":365.0,"ebitda":258.7,"op":246.1,"asset":387.2,"debt":93.0,"debtRatio":31.6},{"name":"(주)로봇앤드디자인","sector":"로봇","rev":788.7,"revPrev":519.0,"ebitda":183.0,"op":179.0,"asset":931.3,"debt":126.7,"debtRatio":15.7},{"name":"에이치디현대로보틱스(주)","sector":"로봇","rev":2095.1,"revPrev":1761.5,"ebitda":137.5,"op":24.7,"asset":3531.0,"debt":981.9,"debtRatio":38.5},{"name":"(주)시스윈로보틱스","sector":"로봇","rev":229.6,"revPrev":164.8,"ebitda":17.3,"op":14.9,"asset":346.9,"debt":70.1,"debtRatio":25.3},{"name":"(주)밸류테크","sector":"로봇","rev":190.2,"revPrev":157.6,"ebitda":39.1,"op":31.9,"asset":235.3,"debt":89.3,"debtRatio":61.2},{"name":"(주)임펙엔터프라이즈","sector":"로봇","rev":115.1,"revPrev":113.0,"ebitda":40.3,"op":39.2,"asset":165.5,"debt":12.9,"debtRatio":8.5},{"name":"(주)아라","sector":"로봇","rev":173.3,"revPrev":174.5,"ebitda":34.9,"op":32.3,"asset":205.4,"debt":109.0,"debtRatio":113.2},{"name":"신흥에스이씨(주)","sector":"이차전지","rev":1707.5,"revPrev":1653.4,"ebitda":256.5,"op":125.8,"asset":5343.8,"debt":2135.3,"debtRatio":66.6},{"name":"(주)성우","sector":"이차전지","rev":1037.2,"revPrev":1096.0,"ebitda":132.0,"op":79.2,"asset":2138.6,"debt":252.1,"debtRatio":13.4},{"name":"(주)디이엔티","sector":"이차전지","rev":1457.8,"revPrev":1272.5,"ebitda":86.3,"op":58.0,"asset":2371.4,"debt":726.8,"debtRatio":44.2},{"name":"(주)피엔티","sector":"이차전지","rev":9889.4,"revPrev":5161.5,"ebitda":1755.7,"op":1706.6,"asset":14638.8,"debt":8759.1,"debtRatio":149.0},{"name":"(주)디엔오토모티브","sector":"이차전지","rev":11006.7,"revPrev":6774.3,"ebitda":3600.6,"op":3412.8,"asset":19077.5,"debt":6411.4,"debtRatio":50.6},{"name":"세방전지(주)","sector":"이차전지","rev":15820.3,"revPrev":13576.7,"ebitda":1725.9,"op":1425.0,"asset":17638.0,"debt":3349.8,"debtRatio":23.4},{"name":"(유)클라리오스델코","sector":"이차전지","rev":7557.9,"revPrev":6114.1,"ebitda":1010.1,"op":916.4,"asset":3022.9,"debt":1469.7,"debtRatio":94.6},{"name":"테이진리엘소트코리아(주)","sector":"이차전지","rev":1777.1,"revPrev":1627.6,"ebitda":621.8,"op":578.9,"asset":1270.6,"debt":345.0,"debtRatio":37.3},{"name":"에스티엠(주)","sector":"이차전지","rev":6273.7,"revPrev":14331.0,"ebitda":520.7,"op":295.6,"asset":6156.7,"debt":1482.5,"debtRatio":31.7},{"name":"(주)에코프로이엠","sector":"이차전지","rev":21142.6,"revPrev":37713.4,"ebitda":1604.8,"op":1194.5,"asset":13187.4,"debt":6562.7,"debtRatio":99.1},{"name":"미래첨단소재(주)","sector":"이차전지","rev":1678.2,"revPrev":2691.2,"ebitda":86.6,"op":62.6,"asset":1636.2,"debt":795.3,"debtRatio":94.6},{"name":"(주)티에스아이","sector":"이차전지","rev":2719.9,"revPrev":2611.3,"ebitda":179.7,"op":157.1,"asset":3660.3,"debt":2414.2,"debtRatio":193.7},{"name":"세방산업(주)","sector":"이차전지","rev":388.5,"revPrev":354.0,"ebitda":60.4,"op":48.1,"asset":800.2,"debt":49.5,"debtRatio":6.6},{"name":"(주)고려이노테크","sector":"이차전지","rev":500.2,"revPrev":679.2,"ebitda":57.3,"op":34.0,"asset":595.7,"debt":133.8,"debtRatio":29.0},{"name":"(주)엠오티","sector":"이차전지","rev":848.6,"revPrev":737.3,"ebitda":80.6,"op":65.2,"asset":1097.8,"debt":523.0,"debtRatio":91.0}];
+
+let allData=[],filtered=[],deals=[],selDeal=null,sortKey='rev',sortDir=-1,page=0;
+const PS=50;
+
+function saveState(){try{localStorage.setItem('pe_d',JSON.stringify(allData));localStorage.setItem('pe_deals',JSON.stringify(deals));}catch(e){}}
+function loadState(){try{const d=localStorage.getItem('pe_d');const dl=localStorage.getItem('pe_deals');if(d)allData=JSON.parse(d);if(dl)deals=JSON.parse(dl);}catch(e){}}
+function cr(r,i){const em=r.rev&&r.ebitda!=null?(r.ebitda/r.rev*100):null;const opm=r.rev&&r.op!=null?(r.op/r.rev*100):null;const yoy=r.revPrev&&r.rev?((r.rev-r.revPrev)/r.revPrev*100):null;return{...r,em,opm,yoy,idx:i+1};}
+
+function init(){
+  loadState();
+  if(!allData.length)allData=SEED.filter(r=>r.name&&r.rev!=null).map(cr);
+  applyFilter();updateBadges();
+}
+
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const ni=document.getElementById('nav-'+name);if(ni)ni.classList.add('active');
+  if(name==='overview')renderOverview();
+  if(name==='deals')renderDealSidebar();
+}
+
+function updateBadges(){
+  document.getElementById('badge-screen').textContent=allData.length;
+  document.getElementById('badge-deals').textContent=deals.length;
+}
+
+function applyFilter(){
+  const sec=document.getElementById('f-sector').value;
+  const rmin=parseFloat(document.getElementById('f-rev-min').value)||0;
+  const rmax=parseFloat(document.getElementById('f-rev-max').value)||Infinity;
+  const emMin=parseFloat(document.getElementById('f-em-min').value);
+  const drMax=parseFloat(document.getElementById('f-dr-max').value)||Infinity;
+  const hasEm=!isNaN(emMin);
+  filtered=allData.map(r=>{
+    const secOk=!sec||r.sector===sec;
+    const revOk=r.rev>=rmin&&r.rev<=rmax;
+    const emOk=!hasEm||(r.em!=null&&r.em>=emMin);
+    const drOk=r.debtRatio==null||r.debtRatio<=drMax;
+    return{...r,pass:secOk&&revOk&&emOk&&drOk};
+  });
+  doSort();page=0;renderTable();
+}
+
+function resetFilter(){
+  ['f-sector','f-rev-min','f-rev-max','f-em-min','f-dr-max'].forEach(id=>{const el=document.getElementById(id);if(el.tagName==='SELECT')el.value='';else el.value='';});
+  applyFilter();
+}
+
+function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}doSort();page=0;renderTable();}
+function doSort(){
+  filtered.sort((a,b)=>{let av=a[sortKey],bv=b[sortKey];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;if(typeof av==='string')return av.localeCompare(bv)*sortDir;return(av-bv)*sortDir;});
+  ['idx','name','sector','rev','ebitda','em','opm','debtRatio','yoy'].forEach(k=>{const el=document.getElementById('s-'+k);if(el)el.textContent=k===sortKey?(sortDir>0?'↑':'↓'):'';});
+}
+
+function renderTable(){
+  const pass=filtered.filter(r=>r.pass);
+  document.getElementById('summary-chips').innerHTML=
+    `<div class="chip">전체 <b>${filtered.length}</b></div><div class="chip">Pass <b style="color:var(--green)">${pass.length}</b></div><div class="chip">Fail <b style="color:var(--red)">${filtered.length-pass.length}</b></div>`;
+  const start=page*PS,end=start+PS,pg=filtered.slice(start,end);
+  const f=(n,d=1)=>n!=null?n.toFixed(d):'—';
+  const cc=(v,g,m)=>v!=null?(v>=g?'cg':v>=m?'ca':'cr'):'cn';
+  document.getElementById('screen-tbody').innerHTML=pg.map((r,i)=>{
+    const prom=deals.find(d=>d.name===r.name);
+    return`<tr class="${r.pass?'pr':'fr'}">
+      <td style="color:var(--text3);font-family:'IBM Plex Mono',monospace">${start+i+1}</td>
+      <td style="font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name}</td>
+      <td><span style="font-size:11px;padding:1px 7px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)">${r.sector}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${r.rev!=null?r.rev.toLocaleString():'—'}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">${r.ebitda!=null?r.ebitda.toLocaleString():'—'}</td>
+      <td class="${cc(r.em,10,5)}" style="font-family:'IBM Plex Mono',monospace">${r.em!=null?f(r.em)+'%':'—'}</td>
+      <td class="${cc(r.opm,5,0)}" style="font-family:'IBM Plex Mono',monospace">${r.opm!=null?f(r.opm)+'%':'—'}</td>
+      <td class="${r.debtRatio!=null?(r.debtRatio<=200?'cg':r.debtRatio<=300?'ca':'cr'):'cn'}" style="font-family:'IBM Plex Mono',monospace">${r.debtRatio!=null?r.debtRatio+'%':'—'}</td>
+      <td class="${cc(r.yoy,10,0)}" style="font-family:'IBM Plex Mono',monospace">${r.yoy!=null?f(r.yoy)+'%':'—'}</td>
+      <td><span class="badge ${r.pass?'b-pass':'b-fail'}">${r.pass?'Pass':'Fail'}</span></td>
+      <td>${prom?`<span class="promoted">✓ 추가됨</span>`:(r.pass?`<button class="btn btn-info btn-sm" onclick="promoteDeal('${r.name.replace(/'/g,"\\'")}')">→ 딜 검토</button>`:'—')}</td>
+    </tr>`;
+  }).join('');
+  const total=Math.ceil(filtered.length/PS);
+  document.getElementById('page-info').textContent=`${page+1} / ${total}`;
+  document.getElementById('page-count').textContent=`총 ${filtered.length}개`;
+  document.getElementById('prev-btn').disabled=page===0;
+  document.getElementById('next-btn').disabled=page>=total-1;
+}
+
+function changePage(d){page+=d;renderTable();}
+
+function promoteDeal(name){
+  const r=filtered.find(r=>r.name===name);if(!r)return;
+  if(deals.find(d=>d.name===name)){toast('이미 추가된 기업입니다');return;}
+  const checks={};CL.forEach(c=>c.items.forEach(it=>checks[it.id]='na'));
+  deals.push({name:r.name,sector:r.sector,fi:{rev:r.rev,ebitda:r.ebitda,op:r.op,debtRatio:r.debtRatio,net:'',asset:r.asset||'',debt:r.debt||'',revPrev:r.revPrev||'',nd:''},shareholders:[{name:'',pct:''}],product:'',founded:'',stage:'1차 스크리닝',checks,memo:''});
+  saveState();renderTable();updateBadges();toast(r.name+' → 딜 검토 추가');
+}
+
+function promoteAll(){
+  let cnt=0;
+  filtered.filter(r=>r.pass).forEach(r=>{
+    if(deals.find(d=>d.name===r.name))return;
+    const checks={};CL.forEach(c=>c.items.forEach(it=>checks[it.id]='na'));
+    deals.push({name:r.name,sector:r.sector,fi:{rev:r.rev,ebitda:r.ebitda,op:r.op,debtRatio:r.debtRatio,net:'',asset:r.asset||'',debt:r.debt||'',revPrev:r.revPrev||'',nd:''},shareholders:[{name:'',pct:''}],product:'',founded:'',stage:'1차 스크리닝',checks,memo:''});
+    cnt++;
+  });
+  saveState();renderTable();updateBadges();
+  toast(cnt+'개 기업을 딜 검토에 추가했습니다');
+  if(cnt>0){showPanel('deals');}
+}
+
+// ── DEAL REVIEW ──────────────────────────────────────────────
+function getScore(d){let p=0,t=0;CL.forEach(c=>c.items.forEach(it=>{if(d.checks[it.id]!=='na'){t++;if(d.checks[it.id]==='pass')p++;}}));return{p,t};}
+
+function renderDealSidebar(){
+  const el=document.getElementById('deal-sidebar-list');
+  if(!deals.length){
+    document.getElementById('deals-empty').style.display='';
+    document.getElementById('deals-layout').style.display='none';
+    return;
+  }
+  document.getElementById('deals-empty').style.display='none';
+  document.getElementById('deals-layout').style.display='flex';
+  el.innerHTML=deals.map((d,i)=>{
+    const{p,t}=getScore(d);const pct=t?Math.round(p/t*100):0;
+    const col=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+    return`<div class="di${selDeal===i?' active':''}" onclick="selectDeal(${i})">
+      <div class="di-name">${d.name}</div>
+      <div class="di-sec">${d.sector} · ${d.stage||'—'}</div>
+      <div class="di-score" style="color:${col}">Pass ${pct}% (${p}/${t})</div>
+    </div>`;
+  }).join('');
+}
+
+function selectDeal(i){
+  if(selDeal!==null)saveDeal(selDeal);
+  selDeal=i;renderDealSidebar();renderDealDetail(i);
+}
+
+function saveDeal(i){
+  if(!deals[i])return;const d=deals[i];
+  const gv=id=>{const el=document.getElementById(id);return el?el.value:''};
+  d.product=gv('dd-product');d.founded=gv('dd-founded');d.stage=gv('dd-stage');d.memo=gv('dd-memo');
+  ['rev','ebitda','op','net','asset','debt','revPrev','nd'].forEach(k=>{const el=document.getElementById('dd-'+k);if(el)d.fi[k]=el.value;});
+  d.shareholders=Array.from(document.querySelectorAll('.sh-row')).map((_,j)=>({name:document.getElementById('sh-n-'+j)?.value||'',pct:document.getElementById('sh-p-'+j)?.value||''}));
+  saveState();
+}
+
+function renderDealDetail(i){
+  const d=deals[i];const fi=d.fi||{};
+  const shHtml=(d.shareholders||[{name:'',pct:''}]).map((s,j)=>`<div class="sh-row"><input placeholder="주주명" value="${s.name}" id="sh-n-${j}"/><input placeholder="지분율%" value="${s.pct}" id="sh-p-${j}"/></div>`).join('');
+  document.getElementById('deal-detail-area').innerHTML=`
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+      <div style="font-size:16px;font-weight:600">${d.name} <span style="font-size:13px;font-weight:400;color:var(--text2)">${d.sector}</span></div>
+      <div style="display:flex;gap:8px">
+        <select id="dd-stage" style="font-size:12px;padding:4px 8px">
+          <option ${d.stage==='1차 스크리닝'?'selected':''}>1차 스크리닝</option>
+          <option ${d.stage==='심층 검토'?'selected':''}>심층 검토</option>
+          <option ${d.stage==='LOI 협의'?'selected':''}>LOI 협의</option>
+          <option ${d.stage==='DD 진행'?'selected':''}>DD 진행</option>
+          <option ${d.stage==='보류'?'selected':''}>보류</option>
+          <option ${d.stage==='패스'?'selected':''}>패스</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="saveDeal(${i});renderDealSidebar();toast('저장됨')">저장</button>
+        <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid #f5c4b3" onclick="deleteDeal(${i})">삭제</button>
+      </div>
+    </div>
+    <div class="sl">기업 개요</div>
+    <div class="fg2">
+      <div class="fc"><label>주요 제품/서비스</label><input id="dd-product" value="${d.product||''}" placeholder="핵심 제품 또는 서비스"/></div>
+      <div class="fc"><label>설립연도</label><input id="dd-founded" value="${d.founded||''}" placeholder="예: 2010년"/></div>
+    </div>
+    <div class="sl">주주 구성</div>
+    <div id="sh-list">${shHtml}</div>
+    <button class="add-link" onclick="addSh()">+ 주주 추가</button>
+    <div class="sl" style="margin-top:1rem">재무 데이터 (2024A, 억원)</div>
+    <div class="fg4">
+      <div class="fc"><label>매출</label><input id="dd-rev" type="number" value="${fi.rev||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>EBITDA</label><input id="dd-ebitda" type="number" value="${fi.ebitda||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>영업이익</label><input id="dd-op" type="number" value="${fi.op||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>순이익</label><input id="dd-net" type="number" value="${fi.net||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>총자산</label><input id="dd-asset" type="number" value="${fi.asset||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>총부채</label><input id="dd-debt" type="number" value="${fi.debt||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>전년매출</label><input id="dd-revPrev" type="number" value="${fi.revPrev||''}" oninput="calcFi()"/></div>
+      <div class="fc"><label>순차입금</label><input id="dd-nd" type="number" value="${fi.nd||''}" oninput="calcFi()"/></div>
+    </div>
+    <div class="fg3" style="margin-top:8px">
+      <div class="fc calc"><label>EBITDA 마진</label><span class="val cn" id="dc-em">—</span></div>
+      <div class="fc calc"><label>OPM</label><span class="val cn" id="dc-opm">—</span></div>
+      <div class="fc calc"><label>NPM</label><span class="val cn" id="dc-npm">—</span></div>
+      <div class="fc calc"><label>부채비율</label><span class="val cn" id="dc-dr">—</span></div>
+      <div class="fc calc"><label>매출 YoY</label><span class="val cn" id="dc-yoy">—</span></div>
+      <div class="fc calc"><label>ND/EBITDA</label><span class="val cn" id="dc-nde">—</span></div>
+    </div>
+    <div class="sl">스크리닝 체크리스트</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px">클릭으로 Pass / 검토 / Fail / N·A 전환</div>
+    <div id="chk-list">${renderChklist(d.checks)}</div>
+    <div class="score-block">
+      <div><div class="score-num" id="dd-score">0/0</div><div style="font-size:11px;color:var(--text2)">Pass</div></div>
+      <div style="flex:1"><div class="pt"><div class="pf" id="dd-pf" style="width:0%"></div></div></div>
+      <div class="verdict" id="dd-verdict"></div>
+    </div>
+    <div class="sl">종합 의견</div>
+    <textarea class="memo" id="dd-memo">${d.memo||''}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveDeal(${i});renderDealSidebar();toast('저장됨')">저장</button>
+    </div>`;
+  calcFi();updateScore(i);
+}
+
+function renderChklist(checks){
+  return CL.map(cat=>`
+    <div style="font-size:10px;font-weight:600;color:var(--text3);margin:10px 0 5px;text-transform:uppercase;letter-spacing:.07em">${cat.cat}</div>
+    ${cat.items.map(it=>{const s=checks[it.id]||'na';const cls=s==='pass'?'cip':s==='fail'?'cif':s==='review'?'cir':'cin';const lbl=s==='pass'?'Pass':s==='fail'?'Fail':s==='review'?'검토':'N·A';
+    return`<div class="ci ${cls}" onclick="toggleChk('${it.id}')" id="chk-${it.id}"><div class="ci-txt"><div class="ci-main">${it.main}</div><div class="ci-sub">${it.sub}</div></div><span class="ci-b" id="chkb-${it.id}">${lbl}</span></div>`;
+    }).join('')}`).join('');
+}
+
+const SC=['na','pass','review','fail'];
+function toggleChk(id){
+  if(selDeal===null)return;const d=deals[selDeal];
+  d.checks[id]=SC[(SC.indexOf(d.checks[id]||'na')+1)%4];
+  const s=d.checks[id];const cls=s==='pass'?'cip':s==='fail'?'cif':s==='review'?'cir':'cin';
+  document.getElementById('chk-'+id).className='ci '+cls;
+  document.getElementById('chkb-'+id).textContent=s==='pass'?'Pass':s==='fail'?'Fail':s==='review'?'검토':'N·A';
+  updateScore(selDeal);saveState();
+}
+
+function updateScore(i){
+  const{p,t}=getScore(deals[i]);const pct=t?Math.round(p/t*100):0;
+  const sc=document.getElementById('dd-score');if(!sc)return;
+  sc.textContent=p+'/'+t;
+  const pf=document.getElementById('dd-pf');pf.style.width=pct+'%';
+  pf.style.background=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+  const v=document.getElementById('dd-verdict');
+  v.textContent=pct>=70?'✓ 적극 검토':pct>=40?'△ 조건부 검토':'✕ 패스 검토';
+  v.style.color=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+}
+
+function calcFi(){
+  const v=id=>{const el=document.getElementById('dd-'+id);return el?parseFloat(el.value)||0:0;};
+  const rev=v('rev'),ebitda=v('ebitda'),op=v('op'),net=v('net'),asset=v('asset'),debt=v('debt'),revPrev=v('revPrev'),nd=v('nd');
+  const set=(id,val,cls)=>{const el=document.getElementById(id);if(el){el.textContent=val;el.className='val '+cls;}};
+  const c=(v,g,m)=>v>=g?'cg':v>=m?'ca':'cr';
+  const em=rev?(ebitda/rev*100):null;const opm=rev?(op/rev*100):null;const npm=rev?(net/rev*100):null;
+  const eq=asset-debt;const dr=eq>0?(debt/eq*100):null;
+  const yoy=revPrev?((rev-revPrev)/revPrev*100):null;const nde=ebitda?(nd/ebitda):null;
+  set('dc-em',em!=null?em.toFixed(1)+'%':'—',em!=null?c(em,10,5):'cn');
+  set('dc-opm',opm!=null?opm.toFixed(1)+'%':'—',opm!=null?c(opm,5,0):'cn');
+  set('dc-npm',npm!=null?npm.toFixed(1)+'%':'—',npm!=null?c(npm,5,0):'cn');
+  set('dc-dr',dr!=null?dr.toFixed(0)+'%':'—',dr!=null?(dr<=200?'cg':dr<=300?'ca':'cr'):'cn');
+  set('dc-yoy',yoy!=null?yoy.toFixed(1)+'%':'—',yoy!=null?c(yoy,10,0):'cn');
+  set('dc-nde',nde!=null?nde.toFixed(1)+'x':'—',nde!=null?(nde<=4?'cg':nde<=6?'ca':'cr'):'cn');
+}
+
+function addSh(){
+  const rows=document.querySelectorAll('.sh-row');
+  const cur=Array.from(rows).map((_,j)=>({name:document.getElementById('sh-n-'+j)?.value||'',pct:document.getElementById('sh-p-'+j)?.value||''}));
+  cur.push({name:'',pct:''});
+  document.getElementById('sh-list').innerHTML=cur.map((s,j)=>`<div class="sh-row"><input placeholder="주주명" value="${s.name}" id="sh-n-${j}"/><input placeholder="지분율%" value="${s.pct}" id="sh-p-${j}"/></div>`).join('');
+}
+
+function deleteDeal(i){
+  if(!confirm(deals[i].name+' 딜을 삭제하시겠습니까?'))return;
+  deals.splice(i,1);if(selDeal>=deals.length)selDeal=deals.length-1;if(selDeal<0)selDeal=null;
+  saveState();updateBadges();renderDealSidebar();
+  if(selDeal!==null&&deals.length)renderDealDetail(selDeal);
+  else document.getElementById('deal-detail-area').innerHTML='';
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────────
+function renderOverview(){
+  const el=document.getElementById('overview-content');
+  if(!deals.length){el.innerHTML='<div class="empty-deal"><div style="font-size:32px;margin-bottom:12px">▦</div><div>아직 딜 검토 중인 기업이 없습니다.</div></div>';return;}
+  const total=deals.length;
+  const avgScore=deals.reduce((sum,d)=>{const{p,t}=getScore(d);return sum+(t?p/t*100:0);},0)/total;
+  const stages={};deals.forEach(d=>{stages[d.stage||'미설정']=(stages[d.stage||'미설정']||0)+1;});
+  const sorted=[...deals].sort((a,b)=>{const sa=getScore(a),sb=getScore(b);return(sb.t?sb.p/sb.t:0)-(sa.t?sa.p/sa.t:0);});
+  el.innerHTML=`
+    <div class="ov-grid">
+      <div class="ov-card"><div class="ov-label">검토 딜 수</div><div class="ov-val">${total}</div><div class="ov-sub">개 기업</div></div>
+      <div class="ov-card"><div class="ov-label">평균 체크리스트</div><div class="ov-val">${avgScore.toFixed(0)}%</div><div class="ov-sub">Pass율</div></div>
+      <div class="ov-card"><div class="ov-label">검토 단계 분포</div><div class="ov-val" style="font-size:14px;margin-top:4px">${Object.entries(stages).map(([k,v])=>`<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--text2)">${k}</span><b>${v}개</b></div>`).join('')}</div></div>
+    </div>
+    <div style="display:grid;gap:10px">
+    ${sorted.map((d,i)=>{
+      const{p,t}=getScore(d);const pct=t?Math.round(p/t*100):0;
+      const col=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+      const fi=d.fi||{};
+      return`<div class="card" style="padding:1rem;cursor:pointer" onclick="selectDealAndGo(${deals.indexOf(d)})">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div><span style="font-weight:600">${d.name}</span><span style="font-size:12px;color:var(--text2);margin-left:8px">${d.sector} · ${d.stage||'—'}</span></div>
+          <span style="font-size:13px;font-weight:600;color:${col};font-family:'IBM Plex Mono',monospace">${pct}% (${p}/${t})</span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:10px"><div style="height:100%;width:${pct}%;background:${col};border-radius:2px"></div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:12px">
+          <div style="color:var(--text2)">매출 <span style="color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:600">${fi.rev?Number(fi.rev).toLocaleString()+'억':'—'}</span></div>
+          <div style="color:var(--text2)">EBITDA <span style="color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:600">${fi.ebitda?Number(fi.ebitda).toLocaleString()+'억':'—'}</span></div>
+          <div style="color:var(--text2)">OPM <span style="color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:600">${fi.rev&&fi.op?(Number(fi.op)/Number(fi.rev)*100).toFixed(1)+'%':'—'}</span></div>
+          <div style="color:var(--text2)">부채비율 <span style="color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:600">${fi.debtRatio?fi.debtRatio+'%':'—'}</span></div>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>`;
+}
+
+function selectDealAndGo(i){selDeal=i;showPanel('deals');renderDealSidebar();renderDealDetail(i);}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────
+function handleFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  if(ext==='csv'){
+    reader.onload=ev=>{try{const rows=parseCSV(ev.target.result);mergeRows(rows,file.name);}catch(err){alert('파일 오류: '+err.message);}};
+    reader.readAsText(file,'UTF-8');
+  }else if(ext==='xlsx'||ext==='xls'){
+    reader.onload=ev=>{try{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const json=XLSX.utils.sheet_to_json(ws,{defval:''});mergeRows(mapRows(json),file.name);}catch(err){alert('Excel 오류: '+err.message);}};
+    reader.readAsArrayBuffer(file);
+  }else{alert('CSV 또는 Excel 파일만 지원합니다.');}
+  e.target.value='';
+}
+
+function parseCSV(text){
+  const lines=text.trim().split('\n').map(l=>l.split(',').map(s=>s.trim().replace(/^"|"$/g,'')));
+  if(lines.length<2)return[];
+  const hdr=lines[0];
+  return mapRows(lines.slice(1).filter(r=>r.length>1).map(r=>{const obj={};hdr.forEach((h,i)=>obj[h]=r[i]||'');return obj;}));
+}
+
+function mapRows(json){
+  if(!json.length)return[];
+  const sample=json[0];const keys=Object.keys(sample);
+  const fk=(names)=>{for(const n of names){const k=keys.find(k=>k.toLowerCase().includes(n));if(k)return k;}return null;};
+  const kN=fk(['회사','company','name','기업']);const kS=fk(['업종','sector','산업']);
+  const kR=fk(['매출']);const kE=fk(['ebitda','에비타']);const kO=fk(['영업이익','oper']);
+  const kD=fk(['부채비율','부채','debt']);const kRP=fk(['전년']);
+  return json.filter(r=>kN&&r[kN]).map(r=>({name:String(r[kN]||'').trim(),sector:String(r[kS]||'기타').trim(),rev:parseFloat(r[kR])||0,ebitda:parseFloat(r[kE])||0,op:parseFloat(r[kO])||0,debtRatio:parseFloat(r[kD])||0,revPrev:parseFloat(r[kRP])||0}));
+}
+
+function mergeRows(rows,fname){
+  if(!rows.length){document.getElementById('upload-result').innerHTML=`<div style="color:var(--red);padding:1rem">파싱 실패: 컬럼명을 확인해주세요 (회사명, 업종, 매출, EBITDA, 영업이익, 부채비율)</div>`;return;}
+  let added=0,updated=0;
+  rows.forEach(r=>{
+    const existing=allData.find(d=>d.name===r.name);
+    if(existing){Object.assign(existing,r,{em:r.rev&&r.ebitda!=null?(r.ebitda/r.rev*100):null,opm:r.rev&&r.op!=null?(r.op/r.rev*100):null,yoy:r.revPrev&&r.rev?((r.rev-r.revPrev)/r.revPrev*100):null});updated++;}
+    else{allData.push(cr(r,allData.length));added++;}
+  });
+  saveState();applyFilter();updateBadges();
+  document.getElementById('upload-result').innerHTML=`<div style="background:var(--green-bg);border:1px solid #9fe1cb;border-radius:var(--r);padding:1rem;color:var(--green)"><b>${fname}</b> 업로드 완료 — 신규 ${added}개 추가, ${updated}개 업데이트</div>`;
+  toast(added+'개 기업 추가됨');
+}
+
+// ── EXPORT ────────────────────────────────────────────────────
+function exportCSV(){
+  if(!deals.length){toast('내보낼 딜이 없습니다');return;}
+  const hdr=['회사명','업종','검토단계','매출(억)','EBITDA(억)','EBITDA마진(%)','OPM(%)','부채비율(%)','Pass율(%)','종합의견'];
+  const rows=deals.map(d=>{
+    const fi=d.fi||{};const{p,t}=getScore(d);const pct=t?Math.round(p/t*100):0;
+    const em=fi.rev&&fi.ebitda?(Number(fi.ebitda)/Number(fi.rev)*100).toFixed(1):'';
+    const opm=fi.rev&&fi.op?(Number(fi.op)/Number(fi.rev)*100).toFixed(1):'';
+    return[d.name,d.sector,d.stage||'',fi.rev||'',fi.ebitda||'',em,opm,fi.debtRatio||'',pct,d.memo||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv='\uFEFF'+hdr.join(',')+'\n'+rows.join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='PE_딜_스크리닝_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  toast('CSV 내보내기 완료');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ── DRAG DROP ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  init();
+  const uz=document.querySelector('.upload-zone');
+  uz.addEventListener('dragover',e=>{e.preventDefault();uz.style.borderColor='var(--text)';});
+  uz.addEventListener('dragleave',()=>uz.style.borderColor='');
+  uz.addEventListener('drop',e=>{e.preventDefault();uz.style.borderColor='';const f=e.dataTransfer.files[0];if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('file-input').files=dt.files;handleFile({target:{files:dt.files,value:''}});}});
+});
+</script>
+</body>
+</html>
